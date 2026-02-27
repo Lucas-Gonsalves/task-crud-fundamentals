@@ -1,0 +1,22 @@
+{
+  "name": "task-crud-fundamentals",
+  "version": "1.0.0",
+  "description": "This project aims to help me practice my Node.js fundamentals.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "node --watch src/server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Lucas-Gonsalves/task-crud-fundamentals.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/Lucas-Gonsalves/task-crud-fundamentals/issues"
+  },
+  "homepage": "https://github.com/Lucas-Gonsalves/task-crud-fundamentals#readme"
+}
