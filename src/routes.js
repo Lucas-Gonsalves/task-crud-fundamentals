@@ -6,7 +6,8 @@ export const routes = [
     method: "GET",
     path: "/tasks",
     handler: (req, res) => {
-      res.end("Hello World");
+      const tasks = database.select("tasks")
+      res.end(JSON.stringify(tasks));
     },
   },
 
@@ -25,9 +26,9 @@ export const routes = [
         updated_at: new Date(),
       };
 
-      const tsaks = database.insert("tasks", task);
+      const tasks = database.insert("tasks", task);
 
-      res.writeHead(201).end(JSON.stringify(tsaks));
+      res.writeHead(201).end(JSON.stringify(tasks));
     },
   },
 ];
