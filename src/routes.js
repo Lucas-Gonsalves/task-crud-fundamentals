@@ -1,4 +1,4 @@
-import { database } from "./database.js";
+import { database } from "./database/database.js";
 import { randomUUID } from "node:crypto";
 import { buildRoutePath } from "./utils/build.route.path.js";
 
@@ -17,7 +17,7 @@ export const routes = [
         Object.keys(filters).length ? filters : null,
       );
 
-      return res.end(JSON.stringify(tasks));
+      return res.end(JSON.stringify({ tesks: tasks }));
     },
   },
 
@@ -38,7 +38,26 @@ export const routes = [
 
       const tasks = database.insert("tasks", task);
 
-      res.writeHead(201).end(JSON.stringify(tasks));
+      return res.writeHead(201).end(JSON.stringify({ tasks: tasks }));
+    },
+  },
+  {
+    method: "DELETE",
+    path: buildRoutePath("/tasks/:id"),
+    handler: (req, res) => {
+      const { id } = req.params;
+
+      const deleted = database.delete("tasks", { id });
+
+      if (!deleted) {
+        return res.writeHead(404).end(
+          JSON.stringify({
+            message: "Task not found.",
+          }),
+        );
+      }
+
+      return res.writeHead(204).end();
     },
   },
 ];
