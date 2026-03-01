@@ -42,6 +42,33 @@ export const routes = [
     },
   },
   {
+    method: "PUT",
+    path: buildRoutePath("/tasks/:id"),
+    handler: (req, res) => {
+      const { id } = req.params;
+      const { title, description } = req.body;
+
+      const newTask = {
+        title,
+        description,
+      };
+
+      const updated = database.update("tasks", id, newTask);
+
+      if (!updated) {
+        return res.writeHead(404).end(
+          JSON.stringify({
+            message: "Task not found.",
+          }),
+        );
+      }
+
+      return res.writeHead(200).end(JSON.stringify({
+        message: "Task updated with success.",
+      }));
+    },
+  },
+  {
     method: "DELETE",
     path: buildRoutePath("/tasks/:id"),
     handler: (req, res) => {

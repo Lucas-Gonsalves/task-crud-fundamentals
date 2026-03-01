@@ -56,6 +56,28 @@ class Database {
       return false;
     }
   }
+
+  update(table, id, data) {
+    const rowIndex = this.#database[table].findIndex((row) => row.id === id);
+
+    if (rowIndex > -1) {
+      const founded = this.#database[table][rowIndex];
+
+      const newData = {
+        ...founded,
+        ...data,
+        id: founded.id,
+        updated_at: new Date(),
+      };
+
+      this.#database[table][rowIndex] = newData;
+      this.#persist();
+
+      return true;
+    } else {
+      return false;
+    }
+  }
 }
 
 export const database = new Database();
