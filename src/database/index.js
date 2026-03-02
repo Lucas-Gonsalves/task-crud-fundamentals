@@ -53,6 +53,7 @@ class Database {
     if (search) {
       data = data.filter((row) => {
         return Object.entries(search).some(([key, value]) => {
+          if(key === "id") return row[key].toLowerCase() === (value.toLowerCase())
           return row[key].toLowerCase().includes(value.toLowerCase());
         });
       });
