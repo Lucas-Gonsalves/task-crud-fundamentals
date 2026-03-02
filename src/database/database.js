@@ -1,4 +1,5 @@
 import fs from "node:fs/promises";
+import { randomUUID } from "node:crypto";
 
 const databasePath = new URL("db.json", import.meta.url);
 
@@ -19,8 +20,35 @@ class Database {
     fs.writeFile(databasePath, JSON.stringify(this.#database));
   }
 
+  #getTable(table) {
+    const dataTable = this.#database[table];
+
+    if (!Array.isArray(dataTable)) {
+      return null;
+    }
+
+    return dataTable;
+  }
+
+  #getTableRow(table, id) {
+    const dataTable = this.#getTable(table);
+    if (!dataTable) {
+      return null;
+    }
+
+    const rowIndex = dataTable.findIndex((row) => row.id === id);
+    if (rowIndex === -1) {
+      return null;
+    }
+
+    return {
+      rowContent: dataTable[rowIndex],
+      rowIndex,
+    };
+  }
+
   select(table, search) {
-    let data = this.#database[table] ?? [];
+    let data = this.#getTable(table) ?? [];
 
     if (search) {
       data = data.filter((row) => {
@@ -34,49 +62,56 @@ class Database {
   }
 
   insert(table, data) {
-    if (!Array.isArray(this.#database[table])) {
-      this.#database[table] = [];
-    }
+    this.#database[table] ??= [];
 
-    this.#database[table].push(data);
+    const dataFormated = {
+      id: randomUUID(),
+      created_at: new Date(),
+      updated_at: new Date(),
+      ...data,
+    };
+
+    this.#database[table].push(dataFormated);
 
     this.#persist();
-    return this.#database[table];
+    return dataFormated;
   }
 
   delete(table, id) {
-    const rowIndex = this.#database[table].findIndex((row) => row.id === id);
+    const dataTableFounded = this.#getTableRow(table, id);
 
-    if (rowIndex > -1) {
-      this.#database[table].splice(rowIndex, 1);
-      this.#persist();
-
-      return true;
-    } else {
+    if (!dataTableFounded) {
       return false;
     }
+
+    const { rowIndex } = dataTableFounded;
+
+    this.#database[table].splice(rowIndex, 1);
+    this.#persist();
+
+    return true;
   }
 
-  update(table, id, data) {
-    const rowIndex = this.#database[table].findIndex((row) => row.id === id);
+  update(table, id, data = {}) {
+    const dataTableFounded = this.#getTableRow(table, id);
 
-    if (rowIndex > -1) {
-      const founded = this.#database[table][rowIndex];
-
-      const newData = {
-        ...founded,
-        ...data,
-        id: founded.id,
-        updated_at: new Date(),
-      };
-
-      this.#database[table][rowIndex] = newData;
-      this.#persist();
-
-      return true;
-    } else {
+    if (!dataTableFounded) {
       return false;
     }
+
+    const { rowIndex, rowContent } = dataTableFounded;
+
+    const newData = {
+      ...rowContent,
+      ...data,
+      id: rowContent.id,
+      updated_at: new Date(),
+    };
+
+    this.#database[table][rowIndex] = newData;
+    this.#persist();
+
+    return true;
   }
 }
 

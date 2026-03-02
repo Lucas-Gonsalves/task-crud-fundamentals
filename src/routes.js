@@ -1,5 +1,4 @@
 import { database } from "./database/database.js";
-import { randomUUID } from "node:crypto";
 import { buildRoutePath } from "./utils/build.route.path.js";
 
 export const routes = [
@@ -7,17 +6,17 @@ export const routes = [
     method: "GET",
     path: buildRoutePath("/tasks"),
     handler: (req, res) => {
-      const filters = {};
-
-      if (req.query.title) filters.title = req.query.title;
-      if (req.query.description) filters.description = req.query.description;
+      const filters = {
+        ...(req.query.title && { title: req.query.title }),
+        ...(req.query.description && { description: req.query.description }),
+      };
 
       const tasks = database.select(
         "tasks",
         Object.keys(filters).length ? filters : null,
       );
 
-      return res.end(JSON.stringify({ tesks: tasks }));
+      return res.end(JSON.stringify(tasks));
     },
   },
 
@@ -25,20 +24,38 @@ export const routes = [
     method: "POST",
     path: buildRoutePath("/tasks"),
     handler: (req, res) => {
+      if (!req.body?.title || !req.body?.description) {
+        return res.writeHead(400).end(
+          JSON.stringify({
+            message: "To create a new task, title and description is required.",
+          }),
+        );
+      }
+
       const { title, description } = req.body;
 
-      const task = {
-        id: randomUUID(),
+      const taskTemplate = {
         title,
         description,
         completed_at: null,
-        created_at: new Date(),
-        updated_at: new Date(),
       };
 
-      const tasks = database.insert("tasks", task);
+      const task = database.insert("tasks", taskTemplate);
 
-      return res.writeHead(201).end(JSON.stringify({ tasks: tasks }));
+      if (!task) {
+        return res.writeHead(500).end(
+          JSON.stringify({
+            message: "Internal server error.",
+          }),
+        );
+      }
+
+      return res.writeHead(201).end(
+        JSON.stringify({
+          message: "Task created with success",
+          task,
+        }),
+      );
     },
   },
   {
@@ -46,16 +63,26 @@ export const routes = [
     path: buildRoutePath("/tasks/:id"),
     handler: (req, res) => {
       const { id } = req.params;
-      const { title, description } = req.body;
 
-      const newTask = {
-        title,
-        description,
-      };
+      if (!id) {
+        return res.writeHead(400).end(
+          JSON.stringify({
+            message: "Task not founded",
+          }),
+        );
+      }
 
-      const updated = database.update("tasks", id, newTask);
+      if (!req.body?.title && !req.body?.description) {
+        return res.writeHead(400).end(
+          JSON.stringify({
+            message: "To update a task, title or description is required.",
+          }),
+        );
+      }
 
-      if (!updated) {
+      const taskFounded = database.select("tasks", { id })[0];
+
+      if (!taskFounded) {
         return res.writeHead(404).end(
           JSON.stringify({
             message: "Task not found.",
@@ -63,9 +90,73 @@ export const routes = [
         );
       }
 
-      return res.writeHead(200).end(JSON.stringify({
-        message: "Task updated with success.",
-      }));
+      const { title, description } = req.body;
+
+      const taskUpdated = {
+        title: title ?? taskFounded.title,
+        description: description ?? taskFounded.description,
+      };
+
+      const updated = database.update("tasks", id, taskUpdated);
+
+      if (!updated) {
+        return res.writeHead(500).end(
+          JSON.stringify({
+            message: "Internal server error.",
+          }),
+        );
+      }
+
+      return res.writeHead(200).end(
+        JSON.stringify({
+          message: "Task updated with success.",
+        }),
+      );
+    },
+  },
+  {
+    method: "PATCH",
+    path: buildRoutePath("/tasks/:id/complete"),
+    handler: (req, res) => {
+      const { id } = req.params;
+
+      if (!id) {
+        return res.writeHead(400).end(
+          JSON.stringify({
+            message: "Task not founded",
+          }),
+        );
+      }
+
+      const taskFounded = database.select("tasks", { id })[0];
+
+      if (!taskFounded) {
+        return res.writeHead(404).end(
+          JSON.stringify({
+            message: "Task not found.",
+          }),
+        );
+      }
+
+      let taskUpdated = {
+        completed_at: taskFounded.completed_at ? null : new Date(),
+      };
+
+      const updated = database.update("tasks", id, taskUpdated);
+
+      if (!updated) {
+        return res.writeHead(500).end(
+          JSON.stringify({
+            message: "Internal server error",
+          }),
+        );
+      }
+
+      return res.writeHead(200).end(
+        JSON.stringify({
+          message: "Task updated with success",
+        }),
+      );
     },
   },
   {
@@ -74,7 +165,15 @@ export const routes = [
     handler: (req, res) => {
       const { id } = req.params;
 
-      const deleted = database.delete("tasks", { id });
+      if (!id) {
+        return res.writeHead(400).end(
+          JSON.stringify({
+            message: "Task not found",
+          }),
+        );
+      }
+
+      const deleted = database.delete("tasks", id);
 
       if (!deleted) {
         return res.writeHead(404).end(
