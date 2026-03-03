@@ -2,14 +2,6 @@ import { database } from "../../../database/index.js";
 
 export function handlerPutTask(req, res) {
   const { id } = req.params;
-  
-  if (!id) {
-    return res.writeHead(400).end(
-      JSON.stringify({
-        message: "Task not founded",
-      }),
-    );
-  }
 
   if (!req.body?.title && !req.body?.description) {
     return res.writeHead(400).end(

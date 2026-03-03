@@ -3,14 +3,6 @@ import { database } from "../../../database/index.js";
 export function handlerPatchTask(req, res) {
   const { id } = req.params;
 
-  if (!id) {
-    return res.writeHead(400).end(
-      JSON.stringify({
-        message: "Task not founded",
-      }),
-    );
-  }
-
   const taskFounded = database.select("tasks", { id })[0];
 
   if (!taskFounded) {
